@@ -1,0 +1,22 @@
+{
+  "name": "music-streamer",
+  "version": "0.0.1",
+  "description": "Universal Music Streamer",
+  "main": "index.js",
+  "author": "Snack <korsnack@korsnack.kr>",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^11.1.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "koa": "^2.2.0",
+    "koa-body": "^2.0.1",
+    "koa-router": "^7.1.1",
+    "lame": "^1.2.4",
+    "mz": "^2.6.0",
+    "opusscript": "^0.0.3",
+    "speaker": "^0.3.0"
+  },
+  "engines": {
+    "node": ">=7.6.0"
+  }
+}
