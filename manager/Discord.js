@@ -7,18 +7,18 @@ const CommandHelps = {
 
   "info": "Get streamer information",
   "status": "Get streaming status",
+  "quit": "Stop streamer and quit",
+
   "start": "Start streaming if it is stopped",
   "stop": "Stop streaming if it is started",
   "pause": "Pause music playback",
   "resume": "Resume music playback",
-  "quit": "Stop streamer and quit",
+  "skip-next": "Skip this song and play next song",
 
   "get-nowplaying": "Get now playing music",
   "get-upcoming": "Get upcoming musics upto 10 items",
-
-  "skip-next": "Skip this song and play next song",
-
-  "add-local-file": "Add local music file to the playlist (add-local-file",
+  "add-local-file": "Add local music file to the playlist",
+  "add-remote-file": "Add remote music file to the playlist",
 };
 const Commands = Object.keys(CommandHelps);
 
@@ -110,6 +110,14 @@ class DiscordManager extends Manager {
     return content;
   }
 
+  async cmd_quit() {
+    return `Stopping streamer...`;
+    this.quit();
+  }
+
+  //======================================================================================
+  // Playback
+
   async cmd_start() {
     this.start();
     return `Streaming started.`;
@@ -129,14 +137,6 @@ class DiscordManager extends Manager {
     this.resume();
     return `Streaming resumed.`;
   }
-
-  async cmd_quit() {
-    return `Stopping streamer...`;
-    this.quit();
-  }
-
-  //======================================================================================
-  // Playback
 
   async cmd_skip_next() {
     const result = this.skipNext();
@@ -170,7 +170,19 @@ class DiscordManager extends Manager {
       let id = await this.addLocalFile(filePath, "Discord:" + message.author.username);
       return `Added to the playlist (ID: ${id})`;
     } catch(e) {
-      if(e.detail) return `Failed: ${e.message} (${e.detail})`;
+      if(e.detail) return `Failed: ${e.message}`;
+      else return `Failed: ${e.message}`;
+    }
+  }
+
+  async cmd_add_remote_file(message, remoteURL) {
+    if(!remoteURL) return `Usage: ${this.options.commandPrefix}add-remote-file <remote URL>`;
+
+    try {
+      let id = await this.addRemoteFile(remoteURL, "Discord:" + message.author.username);
+      return `Added to the playlist (ID: ${id})`;
+    } catch(e) {
+      if(e.detail) return `Failed: ${e.message}`;
       else return `Failed: ${e.message}`;
     }
   }

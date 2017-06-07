@@ -1,10 +1,7 @@
 class MusicStreamerError extends Error {
-  constructor(scope, message, detail) {
+  constructor(message) {
     super(message);
-
     this.name = "MusicStreamerError";
-    this.scope = scope;
-    this.detail = detail;
   }
 }
 

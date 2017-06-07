@@ -7,13 +7,13 @@ The Universal Music Streamer.
 ## Control
 
 * CLI (with built-in `readline` module)
-* **WIP** HTTP JSON (with `koa` and related packages)
+* HTTP JSON (with `koa` and related packages)
 * Discord (with `discord.js`)
 
 ## Media
 
 * Local File
-* **TODO** Remote URL
+* Remote URL
 * **TODO** YouTube
 
 ## Output

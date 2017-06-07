@@ -75,6 +75,10 @@ class Manager extends EventEmitter {
   addLocalFile(filePath, adderId) {
     return this.streamer.addLocalFile(filePath, adderId);
   }
+
+  addRemoteFile(remoteURL, adderId) {
+    return this.streamer.addRemoteFile(remoteURL, adderId);
+  }
 }
 
 module.exports = Manager;

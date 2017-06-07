@@ -40,8 +40,10 @@ class SpeakerOutput {
 
   stop() {
     this.stream.closeUpstream();
-    this.currentStream.kill("SIGKILL");
-    this.currentStream = null;
+    if(this.currentStream) {
+      this.currentStream.kill("SIGKILL");
+      this.currentStream = null;
+    }
 
     return true;
   }

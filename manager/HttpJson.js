@@ -1,17 +1,24 @@
 const koa = require("koa");
 const koaRouter = require("koa-router");
 const koaBody = require("koa-body");
+const Manager = require("./Manager");
 
-class HttpJsonManager {
+class HttpJsonManager extends Manager {
   constructor(options = {}) {
     this.options = Object.assign({
       proxy: false,
       port: 8080,
       host: "127.0.0.1",
     }, options);
+  }
 
-    this.streamer = null;
+  attach(musicStreamer) {
+    super.attach(musicStreamer);
 
+    this._startInterface();
+  }
+
+  _startInterface() {
     this.app = new koa();
     this.app.proxy = this.options.proxy;
 
@@ -20,24 +27,30 @@ class HttpJsonManager {
       console.log(ctx.method, ctx.url);
       await next();
     });
-    this.app.use((ctx, next) => this.mwResponseHandler(ctx, next));
-    this.app.use((ctx, next) => this.mwCheckStreamer(ctx, next));
+    this.app.use(async (ctx, next) => this.mwResponseHandler(ctx, next));
 
     const router = koaRouter();
 
+    router.get("/info",   ctx => this.getInfo(ctx));
     router.get("/status", ctx => this.getStatus(ctx));
-    router.get("/playlist", ctx => this.getPlaylist(ctx));
-    router.post("/playlist/addLocalFile", ctx => this.postPlaylistAddLocalFile(ctx));
+    router.get("/quit",   ctx => this.getQuit(ctx));
+
+    router.get("/start",  ctx => this.getStart(ctx));
+    router.get("/stop",   ctx => this.getStop(ctx));
+    router.get("/pause",  ctx => this.getPause(ctx));
+    router.get("/resume", ctx => this.getResume(ctx));
+    router.get("/skipNext", ctx => this.getSkipNext(ctx));
+
+    router.get("/nowplaying", ctx => this.getNowplaying(ctx));
+    router.get("/upcoming",   ctx => this.getUpcoming(ctx));
+    router.post("/add/localFile", ctx => this.postAddLocalFile(ctx));
+    router.post("/add/remoteFile", ctx => this.postAddRemoteFile(ctx));
 
     this.app.use(router.routes());
     this.app.use(router.allowedMethods());
 
     this.app.listen(this.options.port, this.options.host);
   }
-
-  attach(musicStreamer) { this.streamer = musicStreamer; }
-
-  //======================================================================================
 
   async mwResponseHandler(ctx, next) {
     try {
@@ -50,12 +63,19 @@ class HttpJsonManager {
     }
   }
 
-  async mwCheckStreamer(ctx, next) {
-    // if(this.streamer === null) ctx.throw(502, "Cannot connect to the MusicStreamer");
-    await next();
-  }
-
   //======================================================================================
+  // Stream
+
+  async getInfo(ctx) {
+    const info = this.info();
+    const body = {
+      version: info.version,
+      output: info.output,
+      playlistRepeat: info.playlistRepeat,
+    };
+
+    ctx.body = body;
+  }
 
   async getStatus(ctx) {
     let body = { status: "playing" };
@@ -65,28 +85,84 @@ class HttpJsonManager {
     }
     else {
       if(this.streamer.paused === true) body.status = "paused";
-      body.nowplaying = this.streamer.getNowplaying();
+      body.nowplaying = this.getNowplaying();
     }
 
     ctx.body = body;
-    return;
   }
 
-  async getPlaylist(ctx) {
-    const size = Math.max(parseInt(ctx.query.size), 1);
+  async getQuit(ctx) {
+    ctx.body = {};
+    this.quit();
+  }
 
+  //======================================================================================
+  // Playback
+
+  async getStart() {
+    this.start();
+    ctx.body = {};
+  }
+
+  async getStop(ctx) {
+    this.stop();
+    ctx.body = {};
+  }
+
+  async getPause(ctx) {
+    this.pause();
+    ctx.body = {};
+  }
+
+  async getResume(ctx) {
+    this.resume();
+    ctx.body = {};
+  }
+
+  async getSkipNext() {
+    const result = this.skipNext();
+
+    if(result) ctx.body = { next: true };
+    else ctx.throw(503, "End of playlist, stopped");
+  }
+
+  //======================================================================================
+  // Playlist
+
+  async getNowplaying() {
+    const nowplaying = this.getNowplaying();
+
+    if(!nowplaying) ctx.throw(503, "Streaming is stopped");
+    else ctx.body = nowplaying;
+  }
+
+  async getUpcoming(ctx) {
+    const size = Math.max(parseInt(ctx.query.size) || 1, 1);
     ctx.body = this.streamer.getUpcoming(size);
   }
 
-  async postPlaylistAddLocalFile(ctx) {
+  async postAddLocalFile(ctx) {
     let filePath = ctx.request.body.filePath;
-    if(!filePath) ctx.throw(400, "'filePath' is missing");
+    if(!filePath) ctx.throw(400, "'filePath' is missing from POST body");
 
     try {
-      let queueId = await this.streamer.addLocalFile(filePath, "HttpJson");
+      let queueId = await this.streamer.addLocalFile(filePath, "HttpJson:" + ctx.ip);
       ctx.body = { id: queueId };
     } catch(e) {
-      if(e.detail) ctx.throw(400, `${e.message} (${e.detail})`);
+      if(e.detail) ctx.throw(400, `${e.message}`);
+      else ctx.throw(400, `${e.message}`);
+    }
+  }
+
+  async postAddRemoteFile(ctx) {
+    let remoteURL = ctx.request.body.remoteURL;
+    if(!remoteURL) ctx.throw(400, "'remoteURL' is missing from POST body");
+
+    try {
+      let queueId = await this.streamer.addRemoteFile(remoteURL, "HttpJson:" + ctx.ip);
+      ctx.body = { id: queueId };
+    } catch(e) {
+      if(e.detail) ctx.throw(400, `${e.message}`);
       else ctx.throw(400, `${e.message}`);
     }
   }

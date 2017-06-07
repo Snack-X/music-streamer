@@ -93,6 +93,10 @@ class MusicStreamer {
   addLocalFile(filePath, adderId) {
     return this.playlist.addLocalFile(filePath, adderId);
   }
+
+  addRemoteFile(remoteURL, adderId) {
+    return this.playlist.addRemoteFile(remoteURL, adderId);
+  }
 }
 
 module.exports = MusicStreamer;

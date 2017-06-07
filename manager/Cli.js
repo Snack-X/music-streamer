@@ -6,18 +6,18 @@ const CommandHelps = {
 
   "info": "Get streamer information",
   "status": "Get streaming status",
+  "quit": "Stop streamer and quit",
+
   "start": "Start streaming if it is stopped",
   "stop": "Stop streaming if it is started",
   "pause": "Pause music playback",
   "resume": "Resume music playback",
-  "quit": "Stop streamer and quit",
+  "skip-next": "Skip this song and play next song",
 
   "get-nowplaying": "Get now playing music",
   "get-upcoming": "Get upcoming musics upto 10 items",
-
-  "skip-next": "Skip this song and play next song",
-
   "add-local-file": "Add local music file to the playlist",
+  "add-remote-file": "Add remote music file to the playlist",
 };
 const Commands = Object.keys(CommandHelps);
 
@@ -96,6 +96,14 @@ class CliManager extends Manager {
       this.rl.write(`NOWPLAYING: ${this.getNowplaying()}\n`);
   }
 
+  async cmd_quit() {
+    this.rl.write(`Stopping streamer...\n`);
+    this.quit();
+  }
+
+  //======================================================================================
+  // Playback
+
   async cmd_start() {
     this.start();
     this.rl.write(`Streaming started.\n`);
@@ -115,14 +123,6 @@ class CliManager extends Manager {
     this.resume();
     this.rl.write(`Streaming resumed.\n`);
   }
-
-  async cmd_quit() {
-    this.rl.write(`Stopping streamer...\n`);
-    this.quit();
-  }
-
-  //======================================================================================
-  // Playback
 
   async cmd_skip_next() {
     const result = this.skipNext();
@@ -159,7 +159,20 @@ class CliManager extends Manager {
       let id = await this.addLocalFile(filePath, "CLI");
       this.rl.write(`SUCCESS: Added to the playlist (ID: ${id})\n`);
     } catch(e) {
-      if(e.detail) this.rl.write(`FAILED: ${e.message} (${e.detail})\n`);
+      if(e.detail) this.rl.write(`FAILED: ${e.message}\n`);
+      else this.rl.write(`FAILED: ${e.message}\n`);
+    }
+  }
+
+  async cmd_add_remote_file() {
+    this.rl.write("Adding remote file. Type file's URL\n");
+    const remoteURL = await this.rl.question("URL? > ");
+
+    try {
+      let id = await this.addRemoteFile(remoteURL, "CLI");
+      this.rl.write(`SUCCESS: Added to the playlist (ID: ${id})\n`);
+    } catch(e) {
+      if(e.detail) this.rl.write(`FAILED: ${e.message}\n`);
       else this.rl.write(`FAILED: ${e.message}\n`);
     }
   }
